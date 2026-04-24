@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的班表</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #43cea2 0%, #185a9d 100%);
+      min-height: 100vh;
+      padding: 16px;
+      color: #333;
+    }
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .header {
+      background: white;
+      border-radius: 16px;
+      padding: 18px 20px;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    }
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 20px;
+      font-weight: 700;
+      color: #185a9d;
+    }
+    .header-subtitle {
+      font-size: 13px;
+      color: #777;
+      margin-top: 4px;
+    }
+    .card {
+      background: white;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      border-left: 4px solid #43cea2;
+    }
+    .card-date {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .card-date .date {
+      font-size: 22px;
+      font-weight: 700;
+      color: #185a9d;
+    }
+    .card-date .weekday {
+      font-size: 14px;
+      color: #888;
+    }
+    .card-time {
+      font-size: 16px;
+      font-weight: 600;
+      color: #43cea2;
+      margin-bottom: 10px;
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 8px;
+      word-break: break-word;
+    }
+    .card-location {
+      font-size: 14px;
+      color: #444;
+      margin-bottom: 10px;
+      background: #f0f7ff;
+      padding: 8px 10px;
+      border-radius: 8px;
+      word-break: break-word;
+    }
+    .card-location a {
+      color: #185a9d;
+      text-decoration: none;
+    }
+    .card-description {
+      font-size: 13px;
+      color: #555;
+      line-height: 1.6;
+      background: #fffbea;
+      padding: 10px 12px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      border-left: 3px solid #ffc857;
+    }
+    .card-description-label {
+      font-size: 11px;
+      color: #a07c00;
+      font-weight: 700;
+      margin-bottom: 4px;
+      letter-spacing: 0.5px;
+    }
+    .empty, .status {
+      background: white;
+      border-radius: 14px;
+      padding: 40px 20px;
+      text-align: center;
+      color: #666;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+    .spinner {
+      display: inline-block;
+      width: 24px; height: 24px;
+      border: 3px solid #e3e8ef;
+      border-top: 3px solid #185a9d;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      vertical-align: middle;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .bind-panel {
+      background: white;
+      border-radius: 14px;
+      padding: 24px 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .bind-panel h2 {
+      color: #185a9d;
+      font-size: 18px;
+      margin-bottom: 6px;
+    }
+    .bind-panel p {
+      color: #666;
+      font-size: 13px;
+      margin-bottom: 16px;
+      line-height: 1.6;
+    }
+    select {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 16px;
+      background: #fafafa;
+      margin-bottom: 16px;
+    }
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      color: white;
+      background: linear-gradient(135deg, #43cea2, #185a9d);
+      cursor: pointer;
+    }
+    .btn:disabled { background: #ccc; cursor: not-allowed; }
+    .error {
+      background: #fee;
+      color: #c33;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-title">📅 <span id="headerTitle">我的班表</span></div>
+      <div class="header-subtitle" id="headerSubtitle">載入中...</div>
+    </div>
+    <div id="content">
+      <div class="status"><div class="spinner"></div><div style="margin-top:10px;">讀取中...</div></div>
+    </div>
+  </div>
+
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script>
+    // ⚠️ 部署後請填入第 3 個 LIFF ID（班表用）
+    const LIFF_ID = '2009812227-DlN3VKPT';
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbyuTBFX0VKLwXyrWmk0hjW8eYJsekObqvQEuvlEuWfjK_32r97hmyO7GWiP20yIIqq-/exec';
+
+    let userProfile = null;
+
+    async function init() {
+      try {
+        await liff.init({ liffId: LIFF_ID });
+        if (!liff.isLoggedIn()) { liff.login(); return; }
+        userProfile = await liff.getProfile();
+        loadSchedule();
+      } catch (err) {
+        showError('初始化失敗：' + err.message);
+      }
+    }
+
+    async function post(payload) {
+      const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
+      return await res.json();
+    }
+
+    async function loadSchedule() {
+      try {
+        const data = await post({
+          action: 'getSchedule',
+          userId: userProfile.userId,
+          displayName: userProfile.displayName
+        });
+
+        if (data.result === 'needBind') {
+          renderBindPanel(data.unbound || []);
+          return;
+        }
+        if (data.result === 'error') {
+          showError(data.message || '讀取失敗');
+          return;
+        }
+        renderSchedule(data);
+      } catch (err) {
+        showError('讀取失敗：' + err.message);
+      }
+    }
+
+    function renderBindPanel(unbound) {
+      document.getElementById('headerTitle').textContent = '綁定員工身份';
+      document.getElementById('headerSubtitle').textContent = '首次使用，請選擇你的姓名';
+
+      if (unbound.length === 0) {
+        document.getElementById('content').innerHTML =
+          '<div class="empty"><div class="empty-icon">🙁</div>' +
+          '<div>目前沒有可綁定的員工資料</div>' +
+          '<div style="font-size:12px;color:#999;margin-top:8px;">請聯絡助理在「員工名冊」新增你的資料</div></div>';
+        return;
+      }
+
+      let options = '<option value="">-- 請選擇 --</option>';
+      unbound.forEach(function(e) {
+        options += '<option value="' + e.code + '">' + e.code + ' - ' + e.name + '</option>';
+      });
+
+      document.getElementById('content').innerHTML =
+        '<div class="bind-panel">' +
+        '<h2>👋 你好，' + escapeHtml(userProfile.displayName) + '</h2>' +
+        '<p>這是你第一次使用班表功能。<br>請選擇你的員工姓名完成綁定（只需綁定一次）。</p>' +
+        '<select id="empSelect">' + options + '</select>' +
+        '<button class="btn" id="bindBtn" onclick="doBind()">✅ 確認綁定</button>' +
+        '<div id="bindErr"></div>' +
+        '</div>';
+    }
+
+    async function doBind() {
+      const sel = document.getElementById('empSelect');
+      const code = sel.value;
+      if (!code) { document.getElementById('bindErr').innerHTML = '<div class="error">請先選擇姓名</div>'; return; }
+      const btn = document.getElementById('bindBtn');
+      btn.disabled = true;
+      btn.textContent = '綁定中...';
+      try {
+        const data = await post({
+          action: 'bindEmployee',
+          userId: userProfile.userId,
+          displayName: userProfile.displayName,
+          employeeCode: code
+        });
+        if (data.result === 'ok') {
+          loadSchedule();
+        } else {
+          document.getElementById('bindErr').innerHTML = '<div class="error">' + escapeHtml(data.message || '綁定失敗') + '</div>';
+          btn.disabled = false;
+          btn.textContent = '✅ 確認綁定';
+        }
+      } catch (err) {
+        document.getElementById('bindErr').innerHTML = '<div class="error">' + escapeHtml(err.message) + '</div>';
+        btn.disabled = false;
+        btn.textContent = '✅ 確認綁定';
+      }
+    }
+
+    function renderSchedule(data) {
+      document.getElementById('headerTitle').textContent = data.employeeName + ' 的班表';
+      document.getElementById('headerSubtitle').textContent =
+        data.rangeStart + ' ~ ' + data.rangeEnd + '（未來 7 天）';
+
+      if (!data.events || data.events.length === 0) {
+        document.getElementById('content').innerHTML =
+          '<div class="empty"><div class="empty-icon">🌴</div>' +
+          '<div>未來 7 天沒有排班</div></div>';
+        return;
+      }
+
+      const html = data.events.map(renderCard).join('');
+      document.getElementById('content').innerHTML = html;
+    }
+
+    function renderCard(ev) {
+      const dateDisplay = ev.startDate.substring(5).replace('-', '/'); // MM/DD
+      const timeDisplay = ev.isAllDay
+        ? '🌞 整日'
+        : ev.start.substring(11) + ' ~ ' + ev.end.substring(11);
+
+      let locationHtml = '';
+      if (ev.location) {
+        const mapUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(ev.location);
+        locationHtml =
+          '<div class="card-location">📍 <a href="' + mapUrl + '" target="_blank" rel="noopener">' +
+          escapeHtml(ev.location) + '</a></div>';
+      }
+
+      let descHtml = '';
+      if (ev.description) {
+        descHtml =
+          '<div class="card-description">' +
+          '<div class="card-description-label">📝 注意事項</div>' +
+          escapeHtml(ev.description) + '</div>';
+      }
+
+      return '<div class="card">' +
+        '<div class="card-date"><span class="date">' + dateDisplay + '</span>' +
+        '<span class="weekday">星期' + ev.weekday + '</span></div>' +
+        '<div class="card-time">🕐 ' + timeDisplay + '</div>' +
+        '<div class="card-title">' + escapeHtml(ev.title) + '</div>' +
+        locationHtml +
+        descHtml +
+        '</div>';
+    }
+
+    function showError(msg) {
+      document.getElementById('content').innerHTML =
+        '<div class="empty"><div class="empty-icon">⚠️</div>' +
+        '<div>' + escapeHtml(msg) + '</div></div>';
+    }
+
+    function escapeHtml(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    init();
+  </script>
+</body>
+</html>
