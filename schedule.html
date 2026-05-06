@@ -232,58 +232,21 @@
     }
 
     function renderBindPanel(unbound) {
-      document.getElementById('headerTitle').textContent = '綁定員工身份';
-      document.getElementById('headerSubtitle').textContent = '首次使用，請選擇你的姓名';
-
-      if (unbound.length === 0) {
-        document.getElementById('content').innerHTML =
-          '<div class="empty"><div class="empty-icon">🙁</div>' +
-          '<div>目前沒有可綁定的員工資料</div>' +
-          '<div style="font-size:12px;color:#999;margin-top:8px;">請聯絡助理在「員工名冊」新增你的資料</div></div>';
-        return;
-      }
-
-      let options = '<option value="">-- 請選擇 --</option>';
-      unbound.forEach(function(e) {
-        options += '<option value="' + e.code + '">' + e.code + ' - ' + e.name + '</option>';
-      });
+      document.getElementById('headerTitle').textContent = '尚未綁定班表';
+      document.getElementById('headerSubtitle').textContent = '請先完成一次打卡';
 
       document.getElementById('content').innerHTML =
         '<div class="bind-panel">' +
         '<h2>👋 你好，' + escapeHtml(userProfile.displayName) + '</h2>' +
-        '<p>這是你第一次使用班表功能。<br>請選擇你的員工姓名完成綁定（只需綁定一次）。</p>' +
-        '<select id="empSelect">' + options + '</select>' +
-        '<button class="btn" id="bindBtn" onclick="doBind()">✅ 確認綁定</button>' +
-        '<div id="bindErr"></div>' +
+        '<p>你的 LINE 帳號還沒對應到員工班表。<br><br>' +
+        '請依下列步驟完成綁定：<br>' +
+        '<strong>1.</strong> 先回 LINE 完成一次打卡（任何時段都可以）<br>' +
+        '<strong>2.</strong> 通知助理：「我打卡了，請幫我綁定班表」<br>' +
+        '<strong>3.</strong> 助理綁定完成後，回到此頁就會看到班表</p>' +
+        '<div style="background:#f0f7ff;padding:12px;border-radius:8px;font-size:12px;color:#555;line-height:1.6;">' +
+        '💡 為什麼要這樣？<br>避免員工誤選別人的姓名，造成班表錯亂。改由助理依打卡紀錄為你綁定，最安全。' +
+        '</div>' +
         '</div>';
-    }
-
-    async function doBind() {
-      const sel = document.getElementById('empSelect');
-      const code = sel.value;
-      if (!code) { document.getElementById('bindErr').innerHTML = '<div class="error">請先選擇姓名</div>'; return; }
-      const btn = document.getElementById('bindBtn');
-      btn.disabled = true;
-      btn.textContent = '綁定中...';
-      try {
-        const data = await post({
-          action: 'bindEmployee',
-          userId: userProfile.userId,
-          displayName: userProfile.displayName,
-          employeeCode: code
-        });
-        if (data.result === 'ok') {
-          loadSchedule();
-        } else {
-          document.getElementById('bindErr').innerHTML = '<div class="error">' + escapeHtml(data.message || '綁定失敗') + '</div>';
-          btn.disabled = false;
-          btn.textContent = '✅ 確認綁定';
-        }
-      } catch (err) {
-        document.getElementById('bindErr').innerHTML = '<div class="error">' + escapeHtml(err.message) + '</div>';
-        btn.disabled = false;
-        btn.textContent = '✅ 確認綁定';
-      }
     }
 
     function renderSchedule(data) {
